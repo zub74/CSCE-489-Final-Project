@@ -335,7 +335,7 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 					K(spring->p1->i + j, spring->p1->i + k) -= Ks(j, k); //plswork
 				}
 			}
-			//K.block<3, 3>(spring->p1->i, spring->p1->i) -= Ks; //subtract
+			//K.block<3, 3>(spring->p1->i, spring->p1->i) -= Ks; //subtractd
 		}
 		
 	}
