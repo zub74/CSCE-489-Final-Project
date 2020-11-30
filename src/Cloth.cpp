@@ -263,24 +263,28 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 	v.setZero();
 	f.setZero();
 
-	for (int i = 0; i < particles.size(); i++) { //set M, v, and f
+	VectorXd vLastRun = v;
+
+	typedef Eigen::Triplet<double> T;
+
+	std::vector<T> M_;
+	for (int i = 0; i < particles.size(); i++) { //set v and f
 		if (!particles[i]->fixed) { //if not a fixed particle
-			typedef Eigen::Triplet<double> T;
-			std::vector<T> A_;
-			A_.push_back(T(0, 0, 1));
-			A_.push_back(T(1, 1, 1));
-			Eigen::SparseMatrix<double> MS(2,2);
-			MS.setFromTriplets(A_.begin(), A_.end());
+			
+			for (int index = particles[i]->i; index < particles[i]->i + 3; index++) {
+				M_.push_back(T(index, index, particles[i]->m));
+			}
 
-
+			//Matrix3d I = Matrix3d::Identity(3, 3);
+			//M.block<3, 3>(particles[i]->i, particles[i]->i) = particles[i]->m * I;
 
 			v.segment<3>(particles[i]->i) = particles[i]->v;
-			Matrix3d I = Matrix3d::Identity(3, 3);
-			M.block<3, 3>(particles[i]->i, particles[i]->i) = particles[i]->m * I;
 			f.segment<3>(particles[i]->i) = particles[i]->m * (grav + windForce);
-			//cout << f.segment<3>(particles[i]->i) << endl;
 		}
 	}
+	M.setFromTriplets(M_.begin(), M_.end()); //set M
+
+	//cout << M << endl;
 
 	for (int i = 0; i < springs.size(); i++) { //spring forces and stiffness matrix
 		auto spring = springs[i]; //current spring
@@ -301,18 +305,39 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 			f.segment<3>(spring->p1->i) -= fs; //subtract force from p1
 		}
 
+		
 		if (!spring->p0->fixed && !spring->p1->fixed) { //if both aren't fixed
-			K.block<3, 3>(spring->p0->i, spring->p0->i) -= Ks; //subtract
+			for (int j = 0; j < 3; j++) {
+				for (int k = 0; k < 3; k++) {
+					K(spring->p0->i + j, spring->p0->i + k) -= Ks(j, k); //plswork
+					K(spring->p0->i + j, spring->p1->i + k) += Ks(j, k); //plswork
+					K(spring->p1->i + j, spring->p0->i + k) += Ks(j, k); //plswork
+					K(spring->p1->i + j, spring->p1->i + k) -= Ks(j, k); //plswork
+				}
+			}
+
+			/*K.block<3, 3>(spring->p0->i, spring->p0->i) -= Ks; //subtract
 			K.block<3, 3>(spring->p0->i, spring->p1->i) += Ks; //add
 			K.block<3, 3>(spring->p1->i, spring->p0->i) += Ks; //add
-			K.block<3, 3>(spring->p1->i, spring->p1->i) -= Ks; //subtract
+			K.block<3, 3>(spring->p1->i, spring->p1->i) -= Ks; //subtract*/
 		}
 		else if (!spring->p0->fixed) { //else if p0 isn't fixed
-			K.block<3, 3>(spring->p0->i, spring->p0->i) -= Ks; //subtract
+			for (int j = 0; j < 3; j++) {
+				for (int k = 0; k < 3; k++) {
+					K(spring->p0->i + j, spring->p0->i + k) -= Ks(j, k); //plswork
+				}
+			}
+			//K.block<3, 3>(spring->p0->i, spring->p0->i) -= Ks; //subtract
 		}
 		else if (!spring->p1->fixed) { //esle if 01 isn't fixed
-			K.block<3, 3>(spring->p1->i, spring->p1->i) -= Ks; //subtract
+			for (int j = 0; j < 3; j++) {
+				for (int k = 0; k < 3; k++) {
+					K(spring->p1->i + j, spring->p1->i + k) -= Ks(j, k); //plswork
+				}
+			}
+			//K.block<3, 3>(spring->p1->i, spring->p1->i) -= Ks; //subtract
 		}
+		
 	}
 
 	double c = 65; //collision constant
@@ -338,9 +363,14 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 	}
 
 	//solve the system
-	MatrixXd A = M - (h * h) * K;
+	SparseMatrix<double> A = M - (h * h) * K.sparseView();
 	VectorXd b = M * v + h * f;
-	VectorXd x = A.ldlt().solve(b);
+
+	ConjugateGradient< SparseMatrix<double> > cg;
+	cg.setMaxIterations(25);
+	cg.setTolerance(1e-6);
+	cg.compute(A);
+	VectorXd x = cg.solveWithGuess(b, vLastRun);
 
 	for (int i = 0; i < particles.size(); i++) {
 		if (!particles[i]->fixed) { //if not fixed 

@@ -145,9 +145,10 @@ void Scene::step()
 	}
 	
 	// Simulate the cloth
-	spheres.clear();
+	//spheres.clear();
 	if (!(stepCount % 500)) { //every 5 steps, update rand factor
 		windForce = initialWindForce + (initialWindForce * (rand() % 10) / 10.0) ;
+		windForce << 0, 0, 0;
 	}
 
 	cloth->step(h, grav, windForce, spheres);

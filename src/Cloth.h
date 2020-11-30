@@ -43,9 +43,10 @@ private:
 	std::vector< std::shared_ptr<Particle> > particles;
 	std::vector< std::shared_ptr<Spring> > springs;
 	
-	Eigen::VectorXd v;
-	Eigen::VectorXd f;
-	Eigen::MatrixXd M;
+	Eigen::VectorXd v; //these aren't sparse
+	Eigen::VectorXd f; //these aren't sparse
+	Eigen::SparseMatrix<double> M;
+	//Eigen::MatrixXd M;
 	Eigen::MatrixXd K;
 	
 	std::vector<unsigned int> eleBuf;
