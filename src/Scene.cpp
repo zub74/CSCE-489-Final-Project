@@ -5,6 +5,7 @@
 #include "Cloth.h"
 #include "Shape.h"
 #include "Program.h"
+#include <thread> //multithread!
 
 #define PI 3.1415
 
@@ -33,15 +34,22 @@ void Scene::load(const string &RESOURCE_DIR)
 	initialWindForce << 0.0, 0.0, 9.8; //set up the wind force 
 	windForce = initialWindForce;
 	
-	int rows = 30;
-	int cols = 30;
+	int rows = 20;
+	int cols = 20;
 	double mass = 0.1;
 	double stiffness = 1e1;
 	Vector3d x00(-0.25, 0.5, 0.0);
 	Vector3d x01(0.25, 0.5, 0.0);
-	Vector3d x10(-0.25, 0.0, 0);
-	Vector3d x11(0.25, 0.0, 0);
-	cloth = make_shared<Cloth>(rows, cols, x00, x01, x10, x11, mass, stiffness);
+	Vector3d x10(-0.3, 0.0, 0);
+	Vector3d x11(0.3, 0.0, 0);
+	Vector3d offset(0, 0, 0.5);
+	std::shared_ptr<Cloth> sail1 = make_shared<Cloth>(rows, cols, x00, x01, x10, x11, mass, stiffness);
+	std::shared_ptr<Cloth> sail2 = make_shared<Cloth>(rows, cols, x00 + offset, x01 + offset, x10 + offset, x11 + offset, mass, stiffness);
+	std::shared_ptr<Cloth> sail3 = make_shared<Cloth>(rows, cols, x00 - offset, x01 - offset, x10 - offset, x11 - offset, mass, stiffness);
+
+	sails.push_back(sail1); //add sails
+	sails.push_back(sail2);
+	sails.push_back(sail3);
 	
 	sphereShape = make_shared<Shape>();
 	sphereShape->loadMesh(RESOURCE_DIR + "sphere2.obj");
@@ -103,7 +111,9 @@ void Scene::setAtom(bool b) {
 void Scene::init()
 {
 	sphereShape->init();
-	cloth->init();
+	for (auto sail : sails) {
+		sail->init();
+	}
 }
 
 void Scene::tare()
@@ -111,7 +121,9 @@ void Scene::tare()
 	for(int i = 0; i < (int)spheres.size(); ++i) {
 		spheres[i]->tare();
 	}
-	cloth->tare();
+	for (auto sail : sails) {
+		sail->tare();
+	}
 }
 
 void Scene::reset()
@@ -120,7 +132,9 @@ void Scene::reset()
 	for(int i = 0; i < (int)spheres.size(); ++i) {
 		spheres[i]->reset();
 	}
-	cloth->reset();
+	for (auto sail : sails) {
+		sail->reset();
+	}
 }
 
 void Scene::step()
@@ -145,13 +159,23 @@ void Scene::step()
 	}
 	
 	// Simulate the cloth
-	spheres.clear();
-	if (!(stepCount % 500)) { //every 5 steps, update rand factor
-		windForce = initialWindForce + (initialWindForce * (rand() % 10) / 10.0) ;
+	//spheres.clear();
+	if (!(stepCount % 50)) { //every 5 steps, update rand factor
+		cout << "updating wind" << endl;
+		windForce = initialWindForce + (initialWindForce * (rand() % 10) / 10.0);
 		//windForce << 0, 0, 0;
 	}
 
-	cloth->step(h, grav, windForce, spheres);
+	vector<thread> threads;
+	for (auto sail : sails) {
+		//sail->step(h, grav, windForce, spheres);
+		thread t(&Cloth::step, sail, h, grav, windForce, spheres); //hot diggity darn gosh it worked https://thispointer.com/c11-start-thread-by-member-function-with-arguments/
+		threads.push_back(move(t)); //no copy constructor (makes sense)
+	}
+
+	for (int i = 0; i < threads.size(); i++) { //auto constructor didn't work?
+		threads[i].join(); 
+	}
 
 	stepCount++; //increment step count (don't want to use t so I can easily mod it without fmod)
 }
@@ -163,5 +187,7 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 		spheres[i]->draw(MV, prog);
 		glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(spheres[i]->x(0) * 2 + i * 0.1, spheres[i]->x(1) * 2, abs(spheres[i]->x(2) * 2)).data());
 	}
-	cloth->draw(MV, prog);
+	for (auto sail : sails) {
+		sail->draw(MV, prog);
+	}
 }

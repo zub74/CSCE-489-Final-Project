@@ -45,7 +45,7 @@ private:
 
 	
 	std::shared_ptr<Shape> sphereShape;
-	std::shared_ptr<Cloth> cloth;
+	std::vector<std::shared_ptr<Cloth>> sails;
 	std::vector< std::shared_ptr<Particle> > spheres;
 	std::vector< std::shared_ptr<Particle> > spheresAlt;
 };

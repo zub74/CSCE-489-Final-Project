@@ -267,12 +267,12 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 
 	typedef Eigen::Triplet<double> T;
 
-	std::vector<T> M_;
+	std::vector<T> A_;
 	for (int i = 0; i < particles.size(); i++) { //set v and f
 		if (!particles[i]->fixed) { //if not a fixed particle
 			
 			for (int index = particles[i]->i; index < particles[i]->i + 3; index++) {
-				M_.push_back(T(index, index, particles[i]->m));
+				A_.push_back(T(index, index, particles[i]->m));
 			}
 
 			//Matrix3d I = Matrix3d::Identity(3, 3);
@@ -282,11 +282,10 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 			f.segment<3>(particles[i]->i) = particles[i]->m * (grav + windForce);
 		}
 	}
-	M.setFromTriplets(M_.begin(), M_.end()); //set M
+	M.setFromTriplets(A_.begin(), A_.end()); //set M
 
 	//cout << M << endl;
 
-	std::vector<T> K_;
 	for (int i = 0; i < springs.size(); i++) { //spring forces and stiffness matrix
 		auto spring = springs[i]; //current spring
 		Vector3d deltaX = spring->p1->x - spring->p0->x;
@@ -311,10 +310,10 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 
 			for (int j = 0; j < 3; j++) {
 				for (int k = 0; k < 3; k++) {
-					K_.push_back(T(spring->p0->i + j, spring->p0->i + k, -Ks(j, k))); //plswork
-					K_.push_back(T(spring->p0->i + j, spring->p1->i + k, -Ks(j, k))); //plswork
-					K_.push_back(T(spring->p1->i + j, spring->p0->i + k, -Ks(j, k))); //plswork
-					K_.push_back(T(spring->p1->i + j, spring->p1->i + k, -Ks(j, k))); //plswork
+					A_.push_back(T(spring->p0->i + j, spring->p0->i + k, h * h * Ks(j, k))); //plswork
+					A_.push_back(T(spring->p0->i + j, spring->p1->i + k, h * h * -Ks(j, k))); //plswork
+					A_.push_back(T(spring->p1->i + j, spring->p0->i + k, h * h * -Ks(j, k))); //plswork
+					A_.push_back(T(spring->p1->i + j, spring->p1->i + k, h * h * Ks(j, k))); //plswork
 				}
 			}
 
@@ -322,14 +321,14 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 		else if (!spring->p0->fixed) { //else if p0 isn't fixed
 			for (int j = 0; j < 3; j++) {
 				for (int k = 0; k < 3; k++) {
-					K_.push_back(T(spring->p0->i + j, spring->p0->i + k, -Ks(j, k))); //plswork
+					A_.push_back(T(spring->p0->i + j, spring->p0->i + k, h * h * Ks(j, k))); //plswork
 				}
 			}
 		}
 		else if (!spring->p1->fixed) { //esle if 01 isn't fixed
 			for (int j = 0; j < 3; j++) {
 				for (int k = 0; k < 3; k++) {
-					K_.push_back(T(spring->p1->i + j, spring->p1->i + k, -Ks(j, k))); //plswork
+					A_.push_back(T(spring->p1->i + j, spring->p1->i + k, h * h * Ks(j, k))); //plswork
 				}
 			}
 		}
@@ -337,7 +336,7 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 	}
 
 
-	double c = 65; //collision constant
+	double c = 30; //collision constant
 
 	for (int i = 0; i < particles.size(); i++) { //sphere collisions
 
@@ -355,7 +354,7 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 				Matrix3d Kc = c * d * Matrix3d::Identity(3,3);
 				for (int j = 0; j < 3; j++) {
 					for (int k = 0; k < 3; k++) {
-						K_.push_back(T(particle->i + j, particle->i + k, -Kc(j, k))); //plswork
+						A_.push_back(T(particle->i + j, particle->i + k, h * h * -Kc(j, k))); //plswork
 					}
 				}
 			}
@@ -363,17 +362,16 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 
 	}
 
-	K.setFromTriplets(K_.begin(), K_.end()); //set K
-
 	//solve the system
-	SparseMatrix<double> A = M - (h * h) * K;
+	SparseMatrix<double> A(M.rows(), M.cols());
+	A.setFromTriplets(A_.begin(), A_.end()); //set A directly
 	VectorXd b = M * v + h * f;
 
 	ConjugateGradient< SparseMatrix<double> > cg;
 	cg.setMaxIterations(25);
 	cg.setTolerance(1e-6);
 	cg.compute(A);
-	VectorXd x = cg.solveWithGuess(b, vLastRun);
+	VectorXd x = cg.solveWithGuess(b, v);
 
 	for (int i = 0; i < particles.size(); i++) {
 		if (!particles[i]->fixed) { //if not fixed 
