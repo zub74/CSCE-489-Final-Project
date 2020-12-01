@@ -42,35 +42,35 @@ void Scene::load(const string &RESOURCE_DIR)
 	
 	grav << 0.0, -9.8, 0; //gravity
 
-	initialWindForce << 0.0, 0.0, 9.8; //set up the wind force 
+	initialWindForce << 1.0, 0.0, 9.8; //set up the wind force 
 	windForce = initialWindForce;
 	
-	int rows = 20;
-	int cols = 20;
+	int rows = 15;
+	int cols = 15;
 	double mass = 0.1;
 	double stiffness = 1e1;
-	Vector3d x00(-0.25, 0.5, 0.0);
-	Vector3d x01(0.25, 0.5, 0.0);
-	Vector3d x10(-0.3, 0.0, 0);
-	Vector3d x11(0.3, 0.0, 0);
+	Vector3d x00(-0.5, 1.48, -0.103);
+	Vector3d x01(0.5, 1.48, -0.103);
+	Vector3d x10(-0.75, 0.9, -0.103);
+	Vector3d x11(0.75, 0.9, -0.103);
 	Vector3d offset(0, 0, 0.5);
 	std::shared_ptr<Cloth> sail1 = make_shared<Cloth>(rows, cols, x00, x01, x10, x11, mass, stiffness);
-	std::shared_ptr<Cloth> sail2 = make_shared<Cloth>(rows, cols, x00 + offset, x01 + offset, x10 + offset, x11 + offset, mass, stiffness);
-	std::shared_ptr<Cloth> sail3 = make_shared<Cloth>(rows, cols, x00 - offset, x01 - offset, x10 - offset, x11 - offset, mass, stiffness);
+	//std::shared_ptr<Cloth> sail2 = make_shared<Cloth>(rows, cols, x00 + offset, x01 + offset, x10 + offset, x11 + offset, mass, stiffness);
+	//std::shared_ptr<Cloth> sail3 = make_shared<Cloth>(rows, cols, x00 - offset, x01 - offset, x10 - offset, x11 - offset, mass, stiffness);
 
 	sails.push_back(sail1); //add sails
-	sails.push_back(sail2);
-	sails.push_back(sail3);
+	//sails.push_back(sail2);
+	//sails.push_back(sail3);
 	
 	sphereShape = make_shared<Shape>();
-	sphereShape->loadMesh(RESOURCE_DIR + "sea.obj");
+	sphereShape->loadMesh(RESOURCE_DIR + "Little_Ship.obj");
 
 	ship = make_shared<Shape>();
 	ship->loadMesh(RESOURCE_DIR + "Little_Ship.obj");
 	
 	auto sphere = make_shared<Particle>(sphereShape);
 	spheres.push_back(sphere);
-	sphere->r = 0.1;
+	sphere->r = 0.01;
 	sphere->x = Vector3d(0.0, 0.2, 0.0);
 
 	auto smallSphere1 = make_shared<Particle>(sphereShape);
@@ -161,7 +161,7 @@ void Scene::step()
 	if(!spheres.empty()) {
 		auto s = spheres.front();
 		Vector3d x0 = s->x;
-		s->x(2) = 0.5 * sin(0.5 * t);
+		//s->x(2) = 0.5 * sin(0.5 * t);
 		if (atom && spheres.size() > 1) {
 			spheres[1]->x = s->x + Vector3d(0.20 * sin(3 * t), 0, 0.20 * cos(3 * t));
 			spheres[2]->x = s->x + Vector3d(-0.20 * sin(3 * t), 0, -0.20 * cos(3 * t));
@@ -203,6 +203,7 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 	glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(139.0 / 255.0 , 69.0 / 255.0, 19.0 / 255.0).data()); //saddle brown!
 
 	MV->pushMatrix();
+	MV->scale(0.01);
 	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
 	ship->draw(prog); //draw the ship
 	MV->popMatrix();
