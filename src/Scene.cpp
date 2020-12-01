@@ -33,8 +33,8 @@ void Scene::load(const string &RESOURCE_DIR)
 	initialWindForce << 0.0, 0.0, 9.8; //set up the wind force 
 	windForce = initialWindForce;
 	
-	int rows = 10;
-	int cols = 10;
+	int rows = 30;
+	int cols = 30;
 	double mass = 0.1;
 	double stiffness = 1e1;
 	Vector3d x00(-0.25, 0.5, 0.0);
@@ -145,10 +145,10 @@ void Scene::step()
 	}
 	
 	// Simulate the cloth
-	//spheres.clear();
+	spheres.clear();
 	if (!(stepCount % 500)) { //every 5 steps, update rand factor
 		windForce = initialWindForce + (initialWindForce * (rand() % 10) / 10.0) ;
-		windForce << 0, 0, 0;
+		//windForce << 0, 0, 0;
 	}
 
 	cloth->step(h, grav, windForce, spheres);

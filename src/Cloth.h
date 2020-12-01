@@ -46,8 +46,9 @@ private:
 	Eigen::VectorXd v; //these aren't sparse
 	Eigen::VectorXd f; //these aren't sparse
 	Eigen::SparseMatrix<double> M;
+	Eigen::SparseMatrix<double> K;
 	//Eigen::MatrixXd M;
-	Eigen::MatrixXd K;
+	//Eigen::MatrixXd K;
 	
 	std::vector<unsigned int> eleBuf;
 	std::vector<float> posBuf;
