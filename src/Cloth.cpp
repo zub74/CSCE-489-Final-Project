@@ -84,7 +84,7 @@ Cloth::Cloth(int rows, int cols,
 		for(int i = 0; i < rows-1; ++i) {
 			int k0 = i*cols + j;
 			int k1 = k0 + cols;
-			springs.push_back(createSpring(particles[k0], particles[k1], stiffness));
+			springs.push_back(createSpring(particles[k0], particles[k1], stiffness * 2)); //doubled stiffness? Not much of a difference tbh
 		}
 	}
 	
@@ -114,7 +114,7 @@ Cloth::Cloth(int rows, int cols,
 		for(int i = 0; i < rows-2; ++i) {
 			int k0 = i*cols + j;
 			int k2 = k0 + 2*cols;
-			springs.push_back(createSpring(particles[k0], particles[k2], stiffness));
+			springs.push_back(createSpring(particles[k0], particles[k2], stiffness * 2));
 		}
 	}
 
@@ -325,7 +325,7 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 				}
 			}
 		}
-		else if (!spring->p1->fixed) { //esle if 01 isn't fixed
+		else if (!spring->p1->fixed) { //else if 01 isn't fixed
 			for (int j = 0; j < 3; j++) {
 				for (int k = 0; k < 3; k++) {
 					A_.push_back(T(spring->p1->i + j, spring->p1->i + k, h * h * Ks(j, k))); //plswork

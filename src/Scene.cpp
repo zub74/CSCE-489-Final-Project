@@ -6,6 +6,8 @@
 #include "Shape.h"
 #include "Program.h"
 #include <thread> //multithread!
+#include <chrono>
+#include <ctime>
 
 #define PI 3.1415
 
@@ -111,7 +113,7 @@ void Scene::setAtom(bool b) {
 void Scene::init()
 {
 	sphereShape->init();
-	for (auto sail : sails) {
+	for (auto const& sail : sails) {
 		sail->init();
 	}
 }
@@ -121,7 +123,7 @@ void Scene::tare()
 	for(int i = 0; i < (int)spheres.size(); ++i) {
 		spheres[i]->tare();
 	}
-	for (auto sail : sails) {
+	for (auto const& sail : sails) {
 		sail->tare();
 	}
 }
@@ -132,7 +134,7 @@ void Scene::reset()
 	for(int i = 0; i < (int)spheres.size(); ++i) {
 		spheres[i]->reset();
 	}
-	for (auto sail : sails) {
+	for (auto const& sail : sails) {
 		sail->reset();
 	}
 }
@@ -160,20 +162,24 @@ void Scene::step()
 	
 	// Simulate the cloth
 	//spheres.clear();
-	if (!(stepCount % 50)) { //every 5 steps, update rand factor
-		cout << "updating wind" << endl;
+	if (!(stepCount % 150)) { //every 5 steps, update rand factor
+		long initialTime = 1606801198;
+		time_t  timev;
+		cout << time(&timev) - initialTime << endl;
 		windForce = initialWindForce + (initialWindForce * (rand() % 10) / 10.0);
 		//windForce << 0, 0, 0;
 	}
 
 	vector<thread> threads;
-	for (auto sail : sails) {
+	for (int i = 1; i < sails.size(); i++) { //run every other sail on a different thread
 		//sail->step(h, grav, windForce, spheres);
-		thread t(&Cloth::step, sail, h, grav, windForce, spheres); //hot diggity darn gosh it worked https://thispointer.com/c11-start-thread-by-member-function-with-arguments/
+		thread t(&Cloth::step, sails[i], h, grav, windForce, spheres); //hot diggity darn gosh it worked https://thispointer.com/c11-start-thread-by-member-function-with-arguments/
 		threads.push_back(move(t)); //no copy constructor (makes sense)
 	}
 
-	for (int i = 0; i < threads.size(); i++) { //auto constructor didn't work?
+	sails[0]->step(h, grav, windForce, spheres); //run first sail on this thread
+
+	for (int i = 0; i < threads.size(); i++) {
 		threads[i].join(); 
 	}
 
@@ -187,7 +193,7 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 		spheres[i]->draw(MV, prog);
 		glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(spheres[i]->x(0) * 2 + i * 0.1, spheres[i]->x(1) * 2, abs(spheres[i]->x(2) * 2)).data());
 	}
-	for (auto sail : sails) {
+	for (auto const& sail : sails) {
 		sail->draw(MV, prog);
 	}
 }
