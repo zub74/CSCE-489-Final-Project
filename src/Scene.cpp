@@ -1,10 +1,19 @@
 #include <iostream>
 
+#define GLEW_STATIC
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "Scene.h"
 #include "Particle.h"
 #include "Cloth.h"
 #include "Shape.h"
 #include "Program.h"
+#include "MatrixStack.h"
 #include <thread> //multithread!
 #include <chrono>
 #include <ctime>
@@ -54,7 +63,10 @@ void Scene::load(const string &RESOURCE_DIR)
 	sails.push_back(sail3);
 	
 	sphereShape = make_shared<Shape>();
-	sphereShape->loadMesh(RESOURCE_DIR + "sphere2.obj");
+	sphereShape->loadMesh(RESOURCE_DIR + "sea.obj");
+
+	ship = make_shared<Shape>();
+	ship->loadMesh(RESOURCE_DIR + "Little_Ship.obj");
 	
 	auto sphere = make_shared<Particle>(sphereShape);
 	spheres.push_back(sphere);
@@ -189,6 +201,12 @@ void Scene::step()
 void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) const
 {
 	glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(139.0 / 255.0 , 69.0 / 255.0, 19.0 / 255.0).data()); //saddle brown!
+
+	MV->pushMatrix();
+	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
+	ship->draw(prog); //draw the ship
+	MV->popMatrix();
+
 	for(int i = 0; i < (int)spheres.size(); ++i) {
 		spheres[i]->draw(MV, prog);
 		glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(spheres[i]->x(0) * 2 + i * 0.1, spheres[i]->x(1) * 2, abs(spheres[i]->x(2) * 2)).data());
