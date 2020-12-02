@@ -141,6 +141,8 @@ void Scene::setAtom(bool b) {
 void Scene::init()
 {
 	sphereShape->init();
+	ship->init(); //YOU DUMB FKIN DUMMY INITIALIZE YOUR OBJECTS GOD
+	compass->init();
 	for (auto const& sail : sails) {
 		sail->init();
 	}
@@ -233,7 +235,7 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 	}
 
 	//draw compass last
-	//MV->popMatrix();
-	//glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
-	//compass->draw(prog);
+	MV->popMatrix();
+	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
+	compass->draw(prog);
 }

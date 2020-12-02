@@ -200,10 +200,9 @@ void render()
 	// Draw scene
 	prog->bind();
 	glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
-	MV->pushMatrix();
-	//compass->draw(prog);
+	//MV->pushMatrix();
 	scene->draw(MV, prog);
-	MV->popMatrix();
+	//MV->popMatrix();
 	prog->unbind();
 	
 	//////////////////////////////////////////////////////
@@ -211,7 +210,7 @@ void render()
 	//////////////////////////////////////////////////////
 	
 	// Pop stacks
-	MV->popMatrix();
+	//MV->popMatrix();
 	P->popMatrix();
 	
 	GLSL::checkError(GET_FILE_LINE);
