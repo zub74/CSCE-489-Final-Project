@@ -51,10 +51,10 @@ void Scene::load(const string &RESOURCE_DIR)
 	int cols = 15;
 	double mass = 0.1;
 	double stiffness = 1e1;
-	Vector3d x00(-0.75, 2.13, 0.385);
-	Vector3d x01(0.75, 2.13, 0.385);
-	Vector3d x10(-1, 1.2, 0.34);
-	Vector3d x11(1, 1.2, 0.34);
+	Vector3d x00(-0.75, 2.13 - 0.2, 0.385);
+	Vector3d x01(0.75, 2.13 - 0.2, 0.385);
+	Vector3d x10(-1, 1.0, 0.34);
+	Vector3d x11(1, 1.0, 0.34);
 	Vector3d offset(0, 0, 0.5);
 	shared_ptr<Cloth> sail1 = make_shared<Cloth>(rows, cols, x00, x01, x10, x11, mass, stiffness, false);
 
@@ -69,26 +69,21 @@ void Scene::load(const string &RESOURCE_DIR)
 	//sails.push_back(sail3);
 	
 	sphereShape = make_shared<Shape>();
-	sphereShape->loadMesh(RESOURCE_DIR + "galleon_model_stripped_down.obj");
+	sphereShape->loadMesh(RESOURCE_DIR + "sphere2.obj");
 
 	ship = make_shared<Shape>();
-	ship->loadMesh(RESOURCE_DIR + "galleon_model.obj");
+	ship->loadMesh(RESOURCE_DIR + "galleon_model_stripped_down.obj");
 
 	compass = make_shared<Shape>();
 	compass->loadMesh(RESOURCE_DIR + "sphere2.obj");
 
-	auto mast1 = make_shared<Particle>(compass);
+	auto mast1 = make_shared<Particle>(sphereShape);
 	spheres.push_back(mast1);
-	mast1->r = 1;
-	mast1->x = Vector3d(0.0, 3, 0);
-
-	auto sphere = make_shared<Particle>(compass);
-	spheres.push_back(sphere);
-	sphere->r = 0.5;
-	sphere->x = Vector3d(0.0, 0.2, 0.0);
+	mast1->r = 0.08;
+	mast1->x = Vector3d(0.0, 2, 0.47);
 
 	{
-		auto smallSphere1 = make_shared<Particle>(sphereShape);
+		/*auto smallSphere1 = make_shared<Particle>(sphereShape);
 		auto smallSphere2 = make_shared<Particle>(sphereShape);
 		auto smallSphere3 = make_shared<Particle>(sphereShape);
 		auto smallSphere4 = make_shared<Particle>(sphereShape);
@@ -112,7 +107,7 @@ void Scene::load(const string &RESOURCE_DIR)
 		spheresAlt.push_back(smallSphere3);
 		spheresAlt.push_back(smallSphere4);
 		spheresAlt.push_back(smallSphere5);
-		spheresAlt.push_back(smallSphere6);
+		spheresAlt.push_back(smallSphere6);*/
 	}
 }
 
@@ -194,7 +189,7 @@ void Scene::step()
 	if (angleUpdate) { //update the wind force
 		windForce << 10 * sin(windAngle * PI / 180), 0, -10 * cos(windAngle * PI / 180);
 		initialWindForce = windForce;
-		cout << windForce << endl;
+		//cout << windForce << endl;
 		angleUpdate = false;
 	}
 
@@ -224,7 +219,12 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 	glUniform3fv(prog->getUniform("kdBack"), 1, Vector3f(139.0 / 255.0 , 69.0 / 255.0, 19.0 / 255.0).data()); //saddle brown!
 
 	//MV->rotate(sin(t) / 25, 0, 0, 1); //boat rotation
-	//MV->translate(0, spheres[0]->x(1) - sails[1]->center(1), 0); //follow the water
+	//MV->translate(sails[1]->center(1) - 0.2); //follow the water
+	MV->pushMatrix();
+	MV->scale(0.5);
+	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
+	ship->draw(prog);
+	MV->popMatrix();
 
 	for(int i = 0; i < (int)spheres.size(); ++i) {
 		spheres[i]->draw(MV, prog);
@@ -235,7 +235,10 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 	}
 
 	//draw compass last
-	MV->popMatrix();
-	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
-	compass->draw(prog);
+	//MV->popMatrix(); //back to screen view
+	//MV->pushMatrix();
+	//MV->translate(0.5, 0.5, -0.5);
+	//glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
+	//compass->draw(prog);
+	//MV->popMatrix();
 }

@@ -139,6 +139,9 @@ static void init()
 	compassPointer = make_shared<Shape>();
 	
 	compass->loadMesh(RESOURCE_DIR + "sphere2.obj");
+	compassPointer->loadMesh(RESOURCE_DIR + "arrow.obj");
+	compass->init();
+	compassPointer->init();
 
 	
 	camera = make_shared<Camera>();
@@ -186,14 +189,16 @@ void render()
 	camera->applyProjectionMatrix(P);
 	MV->pushMatrix();
 
-	/*prog->bind(); //draw in screen space
+	prog->bind(); //draw in screen space
 	MV->pushMatrix();
-	MV->translate(0, 0, 0.5);
+	MV->translate(3.4, 1.5, -7);
+	//MV->scale(0.1);
 	glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
 	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
+	//compass->draw(prog);
+	compassPointer->draw(prog);
 	MV->popMatrix();
-	compass->draw(prog);
-	prog->unbind();*/
+	prog->unbind();
 
 	camera->applyViewMatrix(MV);
 
@@ -210,7 +215,7 @@ void render()
 	//////////////////////////////////////////////////////
 	
 	// Pop stacks
-	//MV->popMatrix();
+	MV->popMatrix();
 	P->popMatrix();
 	
 	GLSL::checkError(GET_FILE_LINE);

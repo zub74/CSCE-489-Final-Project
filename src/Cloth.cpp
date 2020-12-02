@@ -300,8 +300,6 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 	}
 	M.setFromTriplets(A_.begin(), A_.end()); //set M
 
-	//cout << M << endl;
-
 	for (int i = 0; i < springs.size(); i++) { //spring forces and stiffness matrix
 		auto spring = springs[i]; //current spring
 		Vector3d deltaX = spring->p1->x - spring->p0->x;
@@ -352,14 +350,14 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 	}
 
 
-	double c = 30; //collision constant
+	double c = 50; //collision constant
 
 	if (!isWater) { //ingore collisions for water
 		for (int i = 0; i < particles.size(); i++) { //sphere collisions
 
 			auto particle = particles[i];
 
-			for (int j = 1; j < spheres.size(); j++) { //each sphere (1st sphere is the ship)
+			for (int j = 0; j < spheres.size(); j++) {
 				auto sphere = spheres[j];
 				Vector3d deltaX = particle->x - sphere->x;
 				deltaX(1) = 0; //circular collision only, so height = infinite
@@ -397,12 +395,9 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 			particles[i]->v = x.segment<3>(particles[i]->i);
 			particles[i]->x += h * particles[i]->v; // I had this in a separate for loop like in the assignment page, but I don't think two different ones are needed?
 		}
-		if (particles[i]->center) {
-			if(isWater)
-				cout << endl << particles[i]->x << endl;
-			center = particles[i]->x;
-		}
 	}
+
+	center = particles[particles.size() / 2]->x;
 
 	// Update position and normal buffers
 	updatePosNor();
