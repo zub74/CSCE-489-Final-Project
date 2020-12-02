@@ -65,17 +65,17 @@ void Scene::load(const string &RESOURCE_DIR)
 	//sails.push_back(sail3);
 	
 	sphereShape = make_shared<Shape>();
-	sphereShape->loadMesh(RESOURCE_DIR + "Little_Ship.obj");
+	sphereShape->loadMesh(RESOURCE_DIR + "galleon_model.obj");
 
 	ship = make_shared<Shape>();
-	ship->loadMesh(RESOURCE_DIR + "Little_Ship.obj");
+	ship->loadMesh(RESOURCE_DIR + "galleon_model.obj");
 
 	compass = make_shared<Shape>();
 	compass->loadMesh(RESOURCE_DIR + "Little_Ship.obj");
 	
 	auto sphere = make_shared<Particle>(sphereShape);
 	spheres.push_back(sphere);
-	sphere->r = 0.01;
+	sphere->r = 0.5;
 	sphere->x = Vector3d(0.0, 0.2, 0.0);
 
 	auto smallSphere1 = make_shared<Particle>(sphereShape);
