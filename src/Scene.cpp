@@ -18,7 +18,7 @@
 #include <chrono>
 #include <ctime>
 
-#define PI 3.1415
+#define PI  3.141592653589793238
 
 using namespace std;
 using namespace Eigen;
@@ -55,8 +55,17 @@ void Scene::load(const string &RESOURCE_DIR)
 	Vector3d x01(0.75, 2.13 - 0.2, 0.385);
 	Vector3d x10(-1, 1.0, 0.34);
 	Vector3d x11(1, 1.0, 0.34);
-	Vector3d offset(0, 0, 0.5);
+	Vector3d s00(-0.025, 2.67, 2.46);
+	Vector3d s01(-0.025, 0.9, 0.8);
+	Vector3d s10(-0.025, 1.6, 2.45);
+	Vector3d s11(-0.025, 0.8, 0.8);
+	Vector3d f00(-0.70, 2.13 - 0.3, -1.045);
+	Vector3d f01(0.70, 2.13 - 0.3, -1.045);
+	Vector3d f10(-0.95, 1.0, -1.10);
+	Vector3d f11(0.95, 1.0, -1.10);
 	shared_ptr<Cloth> sail1 = make_shared<Cloth>(rows, cols, x00, x01, x10, x11, mass, stiffness, false);
+	shared_ptr<Cloth> sail2 = make_shared<Cloth>(rows, cols, s00, s01, s10, s11, mass, stiffness * 3, false);
+	shared_ptr<Cloth> sail3 = make_shared<Cloth>(rows, cols, f00, f01, f10, f11, mass, stiffness * 3, false);
 
 	double y = 0.0;
 	shared_ptr<Cloth> water = make_shared<Cloth>(rows + 2, cols + 2, Vector3d(-10,y,10), Vector3d(10, y, 10), Vector3d(-10, y, -10), Vector3d(10, y, -10), mass, stiffness / 5.0, true);
@@ -64,6 +73,8 @@ void Scene::load(const string &RESOURCE_DIR)
 	//std::shared_ptr<Cloth> sail3 = make_shared<Cloth>(rows, cols, x00 - offset, x01 - offset, x10 - offset, x11 - offset, mass, stiffness);
 
 	sails.push_back(sail1); //add sails
+	sails.push_back(sail2); //add sails
+	sails.push_back(sail3); //add sails
 	sails.push_back(water); //add water
 	//sails.push_back(sail2);
 	//sails.push_back(sail3);
@@ -78,9 +89,17 @@ void Scene::load(const string &RESOURCE_DIR)
 	compass->loadMesh(RESOURCE_DIR + "sphere2.obj");
 
 	auto mast1 = make_shared<Particle>(sphereShape);
+	auto mast2 = make_shared<Particle>(sphereShape);
+	auto mast3 = make_shared<Particle>(sphereShape);
 	spheres.push_back(mast1);
+	spheres.push_back(mast2);
+	spheres.push_back(mast3);
 	mast1->r = 0.08;
+	mast2->r = 0.08;
+	mast3->r = 0.06;
 	mast1->x = Vector3d(0.0, 2, 0.47);
+	mast2->x = Vector3d(0.05, 2, 1.55);
+	mast3->x = Vector3d(0.0, 2, -1);
 
 	{
 		/*auto smallSphere1 = make_shared<Particle>(sphereShape);
@@ -218,7 +237,7 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 	glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(139.0 / 255.0 , 69.0 / 255.0, 19.0 / 255.0).data()); //saddle brown!
 	glUniform3fv(prog->getUniform("kdBack"), 1, Vector3f(139.0 / 255.0 , 69.0 / 255.0, 19.0 / 255.0).data()); //saddle brown!
 
-	//MV->rotate(sin(t) / 25, 0, 0, 1); //boat rotation
+	MV->rotate(sin(t) / 25, 0, 0, 1); //boat rotation
 	//MV->translate(sails[1]->center(1) - 0.2); //follow the water
 	MV->pushMatrix();
 	MV->scale(0.5);

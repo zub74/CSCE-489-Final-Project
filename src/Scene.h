@@ -34,7 +34,7 @@ public:
 	double getTime() const { return t; }
 	void setAtom(bool b);
 	void addWindAngle(int a) { windAngle += a; angleUpdate = true; }
-	
+	int getWindAngle() { return windAngle; }
 private:
 	double t;
 	double h;

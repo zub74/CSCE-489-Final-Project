@@ -25,6 +25,8 @@
 #include "Scene.h"
 #include "Particle.h"
 
+#define PI  3.141592653589793238
+
 using namespace std;
 using namespace Eigen;
 
@@ -138,7 +140,7 @@ static void init()
 	compass = make_shared<Shape>();
 	compassPointer = make_shared<Shape>();
 	
-	compass->loadMesh(RESOURCE_DIR + "sphere2.obj");
+	compass->loadMesh(RESOURCE_DIR + "compass.obj");
 	compassPointer->loadMesh(RESOURCE_DIR + "arrow.obj");
 	compass->init();
 	compassPointer->init();
@@ -186,20 +188,31 @@ void render()
 	
 	// Apply camera transforms
 	P->pushMatrix();
-	camera->applyProjectionMatrix(P);
 	MV->pushMatrix();
 
 	prog->bind(); //draw in screen space
 	MV->pushMatrix();
-	MV->translate(3.4, 1.5, -7);
-	//MV->scale(0.1);
+	MV->translate(0.8, 0.8, -0.5);
+	MV->scale(0.09, 0.16, 0.05);
 	glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
 	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
-	//compass->draw(prog);
+	glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(243.0 / 255.0, 207.0 / 255.0, 68.0 / 255.0).data()); //gold
+	glUniform3fv(prog->getUniform("kdBack"), 1, Vector3f(243.0 / 255.0, 207.0 / 255.0, 68.0 / 255.0).data()); //gold
+	compass->draw(prog);
+
+	MV->scale(2);
+	MV->rotate(-scene->getWindAngle() * PI / 180, 0, 0, 1);
+	MV->translate(0, 0.5, -0.1);
+	MV->rotate(PI, 0, 0, 1); //flip around
+
+	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
+	glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(200.0 / 255.0, 31.0 / 255.0, 16.0 / 255.0).data()); //red
+	glUniform3fv(prog->getUniform("kdBack"), 1, Vector3f(200.0 / 255.0, 31.0 / 255.0, 16.0 / 255.0).data()); //red
 	compassPointer->draw(prog);
 	MV->popMatrix();
-	prog->unbind();
 
+	prog->unbind();
+	camera->applyProjectionMatrix(P);
 	camera->applyViewMatrix(MV);
 
 	// Draw scene

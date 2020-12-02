@@ -8,7 +8,7 @@ uniform vec3 kdBack;
 
 void main()
 {
-	vec3 lightPos = vec3(0.0, 0.0, 0.0);
+	vec3 lightPos = vec3(0.0, 0.0, 1.0);
 	vec3 n = normalize(vNor);
 	vec3 l = normalize(lightPos - vPos);
 	vec3 v = -normalize(vPos);
