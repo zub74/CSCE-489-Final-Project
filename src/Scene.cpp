@@ -23,11 +23,13 @@
 using namespace std;
 using namespace Eigen;
 
+
 Scene::Scene() :
 	t(0.0),
 	h(1e-2),
 	stepCount(0),
-	grav(0.0, 0.0, 0.0)
+	grav(0.0, 0.0, 0.0),
+	windAngle(0)
 {
 }
 
@@ -42,7 +44,7 @@ void Scene::load(const string &RESOURCE_DIR)
 	
 	grav << 0.0, -9.8, 0; //gravity
 
-	initialWindForce << 1.0, 0.0, 9.8; //set up the wind force 
+	initialWindForce << 0.0, 0.0, 10; //set up the wind force 
 	windForce = initialWindForce;
 	
 	int rows = 15;
@@ -67,6 +69,9 @@ void Scene::load(const string &RESOURCE_DIR)
 
 	ship = make_shared<Shape>();
 	ship->loadMesh(RESOURCE_DIR + "Little_Ship.obj");
+
+	compass = make_shared<Shape>();
+	compass->loadMesh(RESOURCE_DIR + "Little_Ship.obj");
 	
 	auto sphere = make_shared<Particle>(sphereShape);
 	spheres.push_back(sphere);
@@ -174,7 +179,14 @@ void Scene::step()
 	
 	// Simulate the cloth
 	//spheres.clear();
-	if (!(stepCount % 150)) { //every 5 steps, update rand factor
+	if (angleUpdate) { //update the wind force
+		windForce << 10 * sin(windAngle * PI / 180), 0, 10 * cos(windAngle * PI / 180);
+		initialWindForce = windForce;
+		cout << windForce << endl;
+		angleUpdate = false;
+	}
+
+	if (!(stepCount % 150)) { //every 150 steps, update rand factor
 		long initialTime = 1606801198;
 		time_t  timev;
 		cout << time(&timev) - initialTime << endl;
@@ -215,4 +227,9 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 	for (auto const& sail : sails) {
 		sail->draw(MV, prog);
 	}
+
+	//draw compass last
+	MV->popMatrix();
+	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
+	compass->draw(prog);
 }

@@ -23,6 +23,7 @@
 #include "MatrixStack.h"
 #include "Shape.h"
 #include "Scene.h"
+#include "Particle.h"
 
 using namespace std;
 using namespace Eigen;
@@ -36,6 +37,8 @@ shared_ptr<Camera> camera;
 shared_ptr<Program> prog;
 shared_ptr<Program> progSimple;
 shared_ptr<Scene> scene;
+shared_ptr<Shape> compass;
+shared_ptr<Shape> compassPointer;
 
 static void error_callback(int error, const char *description)
 {
@@ -59,13 +62,19 @@ static void char_callback(GLFWwindow *window, unsigned int key)
 		case 'r':
 			scene->reset();
 			break;
-		case 'a':
-			if (keyToggles[(unsigned)'a']) {
+		case 'w':
+			if (keyToggles[(unsigned)'w']) {
 				scene->setAtom(true);
 			}
 			else {
 				scene->setAtom(false);
 			}
+			break;
+		case 'a':
+			scene->addWindAngle(-15);
+			break;
+		case 'd':
+			scene->addWindAngle(15);
 			break;
 	}
 }
@@ -125,6 +134,12 @@ static void init()
 	prog->addAttribute("aPos");
 	prog->addAttribute("aNor");
 	prog->setVerbose(false);
+
+	compass = make_shared<Shape>();
+	compassPointer = make_shared<Shape>();
+	
+	compass->loadMesh(RESOURCE_DIR + "sphere2.obj");
+
 	
 	camera = make_shared<Camera>();
 
@@ -170,18 +185,29 @@ void render()
 	P->pushMatrix();
 	camera->applyProjectionMatrix(P);
 	MV->pushMatrix();
+
+	prog->bind(); //draw in screen space
+	MV->pushMatrix();
+	MV->translate(0, 0, 0.5);
+	glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
+	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
+	MV->popMatrix();
+	compass->draw(prog);
+	prog->unbind();
+
 	camera->applyViewMatrix(MV);
+
 
 	// Draw grid
 	progSimple->bind();
 	glUniformMatrix4fv(progSimple->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
 	glUniformMatrix4fv(progSimple->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
 	glLineWidth(2.0f);
-	float x0 = -0.5f;
-	float x1 = 0.5f;
-	float z0 = -0.5f;
-	float z1 = 0.5f;
-	int gridSize = 10;
+	float x0 = -5.0f;
+	float x1 = 5.0f;
+	float z0 = -5.0f;
+	float z1 = 5.0f;
+	int gridSize = 100;
 	glLineWidth(1.0f);
 	glBegin(GL_LINES);
 	for(int i = 1; i < gridSize; ++i) {
@@ -217,9 +243,10 @@ void render()
 	// Draw scene
 	prog->bind();
 	glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
-	MV->pushMatrix();
+	//MV->pushMatrix();
+	compass->draw(prog);
 	scene->draw(MV, prog);
-	MV->popMatrix();
+	//MV->popMatrix();
 	prog->unbind();
 	
 	//////////////////////////////////////////////////////
@@ -227,7 +254,7 @@ void render()
 	//////////////////////////////////////////////////////
 	
 	// Pop stacks
-	MV->popMatrix();
+	//MV->popMatrix();
 	P->popMatrix();
 	
 	GLSL::checkError(GET_FILE_LINE);
