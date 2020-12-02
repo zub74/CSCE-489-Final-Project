@@ -44,28 +44,32 @@ void Scene::load(const string &RESOURCE_DIR)
 	
 	grav << 0.0, -9.8, 0; //gravity
 
-	initialWindForce << 0.0, 0.0, 10; //set up the wind force 
+	initialWindForce << 0.0, 0.0, -10; //set up the wind force 
 	windForce = initialWindForce;
 	
 	int rows = 15;
 	int cols = 15;
 	double mass = 0.1;
 	double stiffness = 1e1;
-	Vector3d x00(-0.5, 1.48, -0.103);
-	Vector3d x01(0.5, 1.48, -0.103);
-	Vector3d x10(-0.75, 0.9, -0.103);
-	Vector3d x11(0.75, 0.9, -0.103);
+	Vector3d x00(-0.75, 2.13, 0.385);
+	Vector3d x01(0.75, 2.13, 0.385);
+	Vector3d x10(-1, 1.2, 0.34);
+	Vector3d x11(1, 1.2, 0.34);
 	Vector3d offset(0, 0, 0.5);
-	std::shared_ptr<Cloth> sail1 = make_shared<Cloth>(rows, cols, x00, x01, x10, x11, mass, stiffness);
+	shared_ptr<Cloth> sail1 = make_shared<Cloth>(rows, cols, x00, x01, x10, x11, mass, stiffness, false);
+
+	double y = 0.0;
+	shared_ptr<Cloth> water = make_shared<Cloth>(rows + 3, cols + 3, Vector3d(-10,y,10), Vector3d(10, y, 10), Vector3d(-10, y, -10), Vector3d(10, y, -10), mass, stiffness / 5.0, true);
 	//std::shared_ptr<Cloth> sail2 = make_shared<Cloth>(rows, cols, x00 + offset, x01 + offset, x10 + offset, x11 + offset, mass, stiffness);
 	//std::shared_ptr<Cloth> sail3 = make_shared<Cloth>(rows, cols, x00 - offset, x01 - offset, x10 - offset, x11 - offset, mass, stiffness);
 
 	sails.push_back(sail1); //add sails
+	sails.push_back(water); //add water
 	//sails.push_back(sail2);
 	//sails.push_back(sail3);
 	
 	sphereShape = make_shared<Shape>();
-	sphereShape->loadMesh(RESOURCE_DIR + "galleon_model.obj");
+	sphereShape->loadMesh(RESOURCE_DIR + "galleon_model_stripped_down.obj");
 
 	ship = make_shared<Shape>();
 	ship->loadMesh(RESOURCE_DIR + "galleon_model.obj");
@@ -76,7 +80,7 @@ void Scene::load(const string &RESOURCE_DIR)
 	auto sphere = make_shared<Particle>(sphereShape);
 	spheres.push_back(sphere);
 	sphere->r = 0.5;
-	sphere->x = Vector3d(0.0, 0.2, 0.0);
+	sphere->x = Vector3d(0.0, 0.0, 0.0);
 
 	auto smallSphere1 = make_shared<Particle>(sphereShape);
 	auto smallSphere2 = make_shared<Particle>(sphereShape);
@@ -180,7 +184,7 @@ void Scene::step()
 	// Simulate the cloth
 	//spheres.clear();
 	if (angleUpdate) { //update the wind force
-		windForce << 10 * sin(windAngle * PI / 180), 0, 10 * cos(windAngle * PI / 180);
+		windForce << 10 * sin(windAngle * PI / 180), 0, -10 * cos(windAngle * PI / 180);
 		initialWindForce = windForce;
 		cout << windForce << endl;
 		angleUpdate = false;
@@ -189,7 +193,7 @@ void Scene::step()
 	if (!(stepCount % 150)) { //every 150 steps, update rand factor
 		long initialTime = 1606801198;
 		time_t  timev;
-		cout << time(&timev) - initialTime << endl;
+		//cout << time(&timev) - initialTime << endl;
 		windForce = initialWindForce + (initialWindForce * (rand() % 10) / 10.0);
 		//windForce << 0, 0, 0;
 	}
@@ -213,16 +217,14 @@ void Scene::step()
 void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) const
 {
 	glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(139.0 / 255.0 , 69.0 / 255.0, 19.0 / 255.0).data()); //saddle brown!
+	glUniform3fv(prog->getUniform("kdBack"), 1, Vector3f(139.0 / 255.0 , 69.0 / 255.0, 19.0 / 255.0).data()); //saddle brown!
 
-	MV->pushMatrix();
-	MV->scale(0.01);
-	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
-	ship->draw(prog); //draw the ship
-	MV->popMatrix();
+	MV->rotate(sin(t) / 25, 0, 0, 1); //boat rotation
+	MV->translate(sails[1]->center(1) - 0.2); //follow the water
 
 	for(int i = 0; i < (int)spheres.size(); ++i) {
 		spheres[i]->draw(MV, prog);
-		glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(spheres[i]->x(0) * 2 + i * 0.1, spheres[i]->x(1) * 2, abs(spheres[i]->x(2) * 2)).data());
+		//glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(spheres[i]->x(0) * 2 + i * 0.1, spheres[i]->x(1) * 2, abs(spheres[i]->x(2) * 2)).data());
 	}
 	for (auto const& sail : sails) {
 		sail->draw(MV, prog);

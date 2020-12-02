@@ -197,49 +197,6 @@ void render()
 
 	camera->applyViewMatrix(MV);
 
-
-	// Draw grid
-	progSimple->bind();
-	glUniformMatrix4fv(progSimple->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
-	glUniformMatrix4fv(progSimple->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
-	glLineWidth(2.0f);
-	float x0 = -5.0f;
-	float x1 = 5.0f;
-	float z0 = -5.0f;
-	float z1 = 5.0f;
-	int gridSize = 100;
-	glLineWidth(1.0f);
-	glBegin(GL_LINES);
-	for(int i = 1; i < gridSize; ++i) {
-		if(i == gridSize/2) {
-			glColor3f(0.1f, 0.1f, 0.1f);
-		} else {
-			glColor3f(0.8f, 0.8f, 0.8f);
-		}
-		float x = x0 + i / (float)gridSize * (x1 - x0);
-		glVertex3f(x, 0.0f, z0);
-		glVertex3f(x, 0.0f, z1);
-	}
-	for(int i = 1; i < gridSize; ++i) {
-		if(i == gridSize/2) {
-			glColor3f(0.1f, 0.1f, 0.1f);
-		} else {
-			glColor3f(0.8f, 0.8f, 0.8f);
-		}
-		float z = z0 + i / (float)gridSize * (z1 - z0);
-		glVertex3f(x0, 0.0f, z);
-		glVertex3f(x1, 0.0f, z);
-	}
-	glEnd();
-	glColor3f(0.4f, 0.4f, 0.4f);
-	glBegin(GL_LINE_LOOP);
-	glVertex3f(x0, 0.0f, z0);
-	glVertex3f(x1, 0.0f, z0);
-	glVertex3f(x1, 0.0f, z1);
-	glVertex3f(x0, 0.0f, z1);
-	glEnd();
-	progSimple->unbind();
-
 	// Draw scene
 	prog->bind();
 	glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));

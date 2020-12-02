@@ -25,6 +25,8 @@ public:
 	// glTranslate(): Right multiplies the top matrix by a translation matrix
 	void translate(const glm::vec3 &trans);
 	void translate(float x, float y, float z);
+	// directly change y value
+	void translate(float y);
 	// glScale(): Right multiplies the top matrix by a scaling matrix
 	void scale(const glm::vec3 &scale);
 	void scale(float x, float y, float z);

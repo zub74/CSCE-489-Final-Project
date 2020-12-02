@@ -31,12 +31,14 @@ Cloth::Cloth(int rows, int cols,
 			 const Vector3d &x10,
 			 const Vector3d &x11,
 			 double mass,
-			 double stiffness)
+			 double stiffness, bool w)
 {
 	assert(rows > 1);
 	assert(cols > 1);
 	assert(mass > 0.0);
 	assert(stiffness > 0.0);
+
+	this->isWater = w;
 	
 	this->rows = rows;
 	this->cols = cols;
@@ -62,10 +64,20 @@ Cloth::Cloth(int rows, int cols,
 			if((i == 0 || i == rows-1) && (j == 0 || j == cols-1)) {
 				p->fixed = true;
 				p->i = -1;
-			} else {
+			}
+			else if (isWater && !(rand() % 100 + 1)) { //randomly make points fixed for water (1% chance)
+				p->fixed = true;
+				p->i = -1;
+			}
+			else {
 				p->fixed = false;
 				p->i = n;
 				n += 3;
+			}
+			if (i == rows / 2 && j == cols / 2) {
+				center = x;
+				p->center = true;
+				cout << particles.size() << endl;
 			}
 		}
 	}
@@ -279,7 +291,12 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 			//M.block<3, 3>(particles[i]->i, particles[i]->i) = particles[i]->m * I;
 
 			v.segment<3>(particles[i]->i) = particles[i]->v;
-			f.segment<3>(particles[i]->i) = particles[i]->m * (grav + windForce);
+			if (isWater) {
+				f.segment<3>(particles[i]->i) = particles[i]->m * ((rand() % 3 - 1) * grav + windForce); //negate gravity for ~waves~
+			}
+			else {
+				f.segment<3>(particles[i]->i) = particles[i]->m * (grav + windForce);
+			}
 		}
 	}
 	M.setFromTriplets(A_.begin(), A_.end()); //set M
@@ -338,28 +355,30 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 
 	double c = 30; //collision constant
 
-	for (int i = 0; i < particles.size(); i++) { //sphere collisions
+	if (!isWater) { //ingore collisions for water
+		for (int i = 0; i < particles.size(); i++) { //sphere collisions
 
-		auto particle = particles[i];
+			auto particle = particles[i];
 
-		for (int j = 0; j < spheres.size(); j++) { //each sphere
-			auto sphere = spheres[j];
-			Vector3d deltaX = particle->x - sphere->x;
-			double length = deltaX.norm();
-			double d = particle->r + sphere->r - length;
+			for (int j = 0; j < spheres.size(); j++) { //each sphere
+				auto sphere = spheres[j];
+				Vector3d deltaX = particle->x - sphere->x;
+				double length = deltaX.norm();
+				double d = particle->r + sphere->r - length;
 
-			if (d > 0 && !particle->fixed) { //collision with a non fixed particle
-				Vector3d fc = c * d * (deltaX / length);
-				f.segment<3>(particle->i) += fc; //add collision force
-				Matrix3d Kc = c * d * Matrix3d::Identity(3,3);
-				for (int j = 0; j < 3; j++) {
-					for (int k = 0; k < 3; k++) {
-						A_.push_back(T(particle->i + j, particle->i + k, h * h * -Kc(j, k))); //plswork
+				if (d > 0 && !particle->fixed) { //collision with a non fixed particle
+					Vector3d fc = c * d * (deltaX / length);
+					f.segment<3>(particle->i) += fc; //add collision force
+					Matrix3d Kc = c * d * Matrix3d::Identity(3, 3);
+					for (int j = 0; j < 3; j++) {
+						for (int k = 0; k < 3; k++) {
+							A_.push_back(T(particle->i + j, particle->i + k, h * h * -Kc(j, k))); //plswork
+						}
 					}
 				}
 			}
-		}
 
+		}
 	}
 
 	//solve the system
@@ -377,6 +396,11 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 		if (!particles[i]->fixed) { //if not fixed 
 			particles[i]->v = x.segment<3>(particles[i]->i);
 			particles[i]->x += h * particles[i]->v; // I had this in a separate for loop like in the assignment page, but I don't think two different ones are needed?
+		}
+		if (particles[i]->center) {
+			if(isWater)
+				cout << endl << i << endl;
+			center = particles[i]->x;
 		}
 	}
 
@@ -411,8 +435,8 @@ void Cloth::init()
 void Cloth::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> p) const
 {
 	// Draw mesh
-	glUniform3fv(p->getUniform("kdFront"), 1, Vector3f(1.0, 0.0, 0.0).data());
-	glUniform3fv(p->getUniform("kdBack"),  1, Vector3f(1.0, 1.0, 0.0).data());
+	glUniform3fv(p->getUniform("kdFront"), 1, Vector3f(253.0 / 255, 250.0 / 255, 247.0 / 255).data());
+	glUniform3fv(p->getUniform("kdBack"), 1, Vector3f(253.0 / 255, 250.0 / 255, 247.0 / 255).data());
 	MV->pushMatrix();
 	glUniformMatrix4fv(p->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
 	int h_pos = p->getAttribute("aPos");
@@ -427,6 +451,10 @@ void Cloth::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> p) const
 	glVertexAttribPointer(h_nor, 3, GL_FLOAT, GL_FALSE, 0, (const void *)0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eleBufID);
 	for(int i = 0; i < rows; ++i) {
+		if (isWater) {
+			glUniform3fv(p->getUniform("kdFront"), 1, Vector3f(56.0 / 255, 223.0 / 255, 238.0 + i / 255).data());
+			glUniform3fv(p->getUniform("kdBack"), 1, Vector3f(56.0 / 255, 223.0 / 255, 238.0 + i / 255).data());
+		}
 		glDrawElements(GL_TRIANGLE_STRIP, 2*cols, GL_UNSIGNED_INT, (const void *)(2*cols*i*sizeof(unsigned int)));
 	}
 	glDisableVertexAttribArray(h_nor);

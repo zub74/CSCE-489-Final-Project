@@ -32,6 +32,7 @@ public:
 	Eigen::Vector3d x;  // position
 	Eigen::Vector3d v;  // velocity
 	bool fixed;
+	bool center = false;
 	
 private:
 	const std::shared_ptr<Shape> sphere;

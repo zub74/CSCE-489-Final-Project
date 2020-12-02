@@ -52,6 +52,12 @@ void MatrixStack::translate(float x, float y, float z)
 	translate(glm::vec3(x, y, z));
 }
 
+void MatrixStack::translate(float y)
+{
+	glm::mat4& top = mstack->top();
+	top[3][1] = y;
+}
+
 void MatrixStack::scale(const glm::vec3 &s)
 {
 	glm::mat4 &top = mstack->top();

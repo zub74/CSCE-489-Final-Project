@@ -25,7 +25,8 @@ public:
 		  const Eigen::Vector3d &x10,
 		  const Eigen::Vector3d &x11,
 		  double mass,
-		  double stiffness);
+		  double stiffness,
+		  bool w);
 	virtual ~Cloth();
 	
 	void tare();
@@ -35,6 +36,8 @@ public:
 	
 	void init();
 	void draw(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> p) const;
+	bool isWater = false;
+	Eigen::Vector3d center;
 	
 private:
 	int rows;
