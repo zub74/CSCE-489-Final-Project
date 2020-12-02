@@ -192,7 +192,7 @@ void render()
 
 	prog->bind(); //draw in screen space
 	MV->pushMatrix();
-	MV->translate(0.8, 0.8, -0.5);
+	MV->translate(0.9, 0.8, -0.5);
 	MV->scale(0.09, 0.16, 0.05);
 	glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
 	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
@@ -202,8 +202,7 @@ void render()
 
 	MV->scale(2);
 	MV->rotate(-scene->getWindAngle() * PI / 180, 0, 0, 1);
-	MV->translate(0, 0.5, -0.1);
-	MV->rotate(PI, 0, 0, 1); //flip around
+	MV->translate(0, 0.26, -0.1);
 
 	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
 	glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(200.0 / 255.0, 31.0 / 255.0, 16.0 / 255.0).data()); //red
