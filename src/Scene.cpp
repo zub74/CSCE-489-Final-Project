@@ -69,15 +69,11 @@ void Scene::load(const string &RESOURCE_DIR)
 
 	double y = 0.0;
 	shared_ptr<Cloth> water = make_shared<Cloth>(rows + 2, cols + 2, Vector3d(-10,y,10), Vector3d(10, y, 10), Vector3d(-10, y, -10), Vector3d(10, y, -10), mass, stiffness / 5.0, true);
-	//std::shared_ptr<Cloth> sail2 = make_shared<Cloth>(rows, cols, x00 + offset, x01 + offset, x10 + offset, x11 + offset, mass, stiffness);
-	//std::shared_ptr<Cloth> sail3 = make_shared<Cloth>(rows, cols, x00 - offset, x01 - offset, x10 - offset, x11 - offset, mass, stiffness);
 
+	sails.push_back(water); //add water
 	sails.push_back(sail1); //add sails
 	sails.push_back(sail2); //add sails
 	sails.push_back(sail3); //add sails
-	sails.push_back(water); //add water
-	//sails.push_back(sail2);
-	//sails.push_back(sail3);
 	
 	sphereShape = make_shared<Shape>();
 	sphereShape->loadMesh(RESOURCE_DIR + "sphere2.obj");
@@ -237,9 +233,14 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 	glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(139.0 / 255.0 , 69.0 / 255.0, 19.0 / 255.0).data()); //saddle brown!
 	glUniform3fv(prog->getUniform("kdBack"), 1, Vector3f(139.0 / 255.0 , 69.0 / 255.0, 19.0 / 255.0).data()); //saddle brown!
 
-	MV->rotate(sin(t) / 25, 0, 0, 1); //boat rotation
-	//MV->translate(sails[1]->center(1) - 0.2); //follow the water
+	
 	MV->pushMatrix();
+	MV->translate(sails[0]->center(1)); //follow the water (idfk why the water y value starts at 1.465)
+	MV->rotate(sin(t) / 25, 0, 0, 1); //boat rotation
+	MV->rotate(PI / 8, 1, 0, 0); //boat rotation
+	cout << sails[0]->center(1)<< endl;
+
+	MV->pushMatrix();//draw boat scaled down
 	MV->scale(0.5);
 	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
 	ship->draw(prog);
@@ -249,9 +250,12 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 		spheres[i]->draw(MV, prog);
 		//glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(spheres[i]->x(0) * 2 + i * 0.1, spheres[i]->x(1) * 2, abs(spheres[i]->x(2) * 2)).data());
 	}
-	for (auto const& sail : sails) {
-		sail->draw(MV, prog);
+	for (int i = 1; i < sails.size(); i++) {
+		sails[i]->draw(MV, prog);
 	}
+	MV->popMatrix();
+
+	sails[0]->draw(MV, prog); //draw water
 
 	//draw compass last
 	//MV->popMatrix(); //back to screen view

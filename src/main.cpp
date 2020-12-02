@@ -212,15 +212,17 @@ void render()
 	MV->popMatrix();
 
 	prog->unbind();
+
+	MV->pushMatrix();
 	camera->applyProjectionMatrix(P);
 	camera->applyViewMatrix(MV);
 
 	// Draw scene
 	prog->bind();
 	glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
-	//MV->pushMatrix();
+	MV->pushMatrix();
 	scene->draw(MV, prog);
-	//MV->popMatrix();
+	MV->popMatrix();
 	prog->unbind();
 	
 	//////////////////////////////////////////////////////
