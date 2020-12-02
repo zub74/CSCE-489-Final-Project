@@ -59,7 +59,7 @@ void Scene::load(const string &RESOURCE_DIR)
 	shared_ptr<Cloth> sail1 = make_shared<Cloth>(rows, cols, x00, x01, x10, x11, mass, stiffness, false);
 
 	double y = 0.0;
-	shared_ptr<Cloth> water = make_shared<Cloth>(rows + 3, cols + 3, Vector3d(-10,y,10), Vector3d(10, y, 10), Vector3d(-10, y, -10), Vector3d(10, y, -10), mass, stiffness / 5.0, true);
+	shared_ptr<Cloth> water = make_shared<Cloth>(rows + 2, cols + 2, Vector3d(-10,y,10), Vector3d(10, y, 10), Vector3d(-10, y, -10), Vector3d(10, y, -10), mass, stiffness / 5.0, true);
 	//std::shared_ptr<Cloth> sail2 = make_shared<Cloth>(rows, cols, x00 + offset, x01 + offset, x10 + offset, x11 + offset, mass, stiffness);
 	//std::shared_ptr<Cloth> sail3 = make_shared<Cloth>(rows, cols, x00 - offset, x01 - offset, x10 - offset, x11 - offset, mass, stiffness);
 
@@ -75,38 +75,45 @@ void Scene::load(const string &RESOURCE_DIR)
 	ship->loadMesh(RESOURCE_DIR + "galleon_model.obj");
 
 	compass = make_shared<Shape>();
-	compass->loadMesh(RESOURCE_DIR + "Little_Ship.obj");
-	
-	auto sphere = make_shared<Particle>(sphereShape);
+	compass->loadMesh(RESOURCE_DIR + "sphere2.obj");
+
+	auto mast1 = make_shared<Particle>(compass);
+	spheres.push_back(mast1);
+	mast1->r = 1;
+	mast1->x = Vector3d(0.0, 3, 0);
+
+	auto sphere = make_shared<Particle>(compass);
 	spheres.push_back(sphere);
 	sphere->r = 0.5;
-	sphere->x = Vector3d(0.0, 0.0, 0.0);
+	sphere->x = Vector3d(0.0, 0.2, 0.0);
 
-	auto smallSphere1 = make_shared<Particle>(sphereShape);
-	auto smallSphere2 = make_shared<Particle>(sphereShape);
-	auto smallSphere3 = make_shared<Particle>(sphereShape);
-	auto smallSphere4 = make_shared<Particle>(sphereShape);
-	auto smallSphere5 = make_shared<Particle>(sphereShape);
-	auto smallSphere6 = make_shared<Particle>(sphereShape);
-	smallSphere1->r = 0.05;
-	smallSphere2->r = 0.05;
-	smallSphere3->r = 0.05;
-	smallSphere4->r = 0.05;
-	smallSphere5->r = 0.05;
-	smallSphere6->r = 0.05;
-	int t = 0;
-	smallSphere1->x = sphere->x + Vector3d(0.20 * sin(3 * t), 0, 0.20 * cos(3 * t));
-	smallSphere2->x = sphere->x + Vector3d(-0.20 * sin(3 * t), 0, -0.20 * cos(3 * t));
-	smallSphere3->x = sphere->x + Vector3d(0, 0.20 * sin(1 * t + PI / 2), -0.20 * cos(1 * t + PI / 2));
-	smallSphere4->x = sphere->x + Vector3d(0, -0.20 * sin(1 * t + PI / 2), 0.20 * cos(1 * t + PI / 2));
-	smallSphere5->x = sphere->x + Vector3d(0.20 * sin(2 * t + PI / 4), 0.20 * cos(2 * t + PI / 4), 0);
-	smallSphere6->x = sphere->x + Vector3d(-0.20 * sin(2 * t + PI / 4), -0.20 * cos(2 * t + PI / 4), 0);
-	spheresAlt.push_back(smallSphere1);
-	spheresAlt.push_back(smallSphere2);
-	spheresAlt.push_back(smallSphere3);
-	spheresAlt.push_back(smallSphere4);
-	spheresAlt.push_back(smallSphere5);
-	spheresAlt.push_back(smallSphere6);
+	{
+		auto smallSphere1 = make_shared<Particle>(sphereShape);
+		auto smallSphere2 = make_shared<Particle>(sphereShape);
+		auto smallSphere3 = make_shared<Particle>(sphereShape);
+		auto smallSphere4 = make_shared<Particle>(sphereShape);
+		auto smallSphere5 = make_shared<Particle>(sphereShape);
+		auto smallSphere6 = make_shared<Particle>(sphereShape);
+		smallSphere1->r = 0.05;
+		smallSphere2->r = 0.05;
+		smallSphere3->r = 0.05;
+		smallSphere4->r = 0.05;
+		smallSphere5->r = 0.05;
+		smallSphere6->r = 0.05;
+		int t = 0;
+		smallSphere1->x = sphere->x + Vector3d(0.20 * sin(3 * t), 0, 0.20 * cos(3 * t));
+		smallSphere2->x = sphere->x + Vector3d(-0.20 * sin(3 * t), 0, -0.20 * cos(3 * t));
+		smallSphere3->x = sphere->x + Vector3d(0, 0.20 * sin(1 * t + PI / 2), -0.20 * cos(1 * t + PI / 2));
+		smallSphere4->x = sphere->x + Vector3d(0, -0.20 * sin(1 * t + PI / 2), 0.20 * cos(1 * t + PI / 2));
+		smallSphere5->x = sphere->x + Vector3d(0.20 * sin(2 * t + PI / 4), 0.20 * cos(2 * t + PI / 4), 0);
+		smallSphere6->x = sphere->x + Vector3d(-0.20 * sin(2 * t + PI / 4), -0.20 * cos(2 * t + PI / 4), 0);
+		spheresAlt.push_back(smallSphere1);
+		spheresAlt.push_back(smallSphere2);
+		spheresAlt.push_back(smallSphere3);
+		spheresAlt.push_back(smallSphere4);
+		spheresAlt.push_back(smallSphere5);
+		spheresAlt.push_back(smallSphere6);
+	}
 }
 
 void Scene::setAtom(bool b) {
@@ -182,7 +189,6 @@ void Scene::step()
 	}
 	
 	// Simulate the cloth
-	//spheres.clear();
 	if (angleUpdate) { //update the wind force
 		windForce << 10 * sin(windAngle * PI / 180), 0, -10 * cos(windAngle * PI / 180);
 		initialWindForce = windForce;
@@ -191,11 +197,7 @@ void Scene::step()
 	}
 
 	if (!(stepCount % 150)) { //every 150 steps, update rand factor
-		long initialTime = 1606801198;
-		time_t  timev;
-		//cout << time(&timev) - initialTime << endl;
 		windForce = initialWindForce + (initialWindForce * (rand() % 10) / 10.0);
-		//windForce << 0, 0, 0;
 	}
 
 	vector<thread> threads;
@@ -219,8 +221,8 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 	glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(139.0 / 255.0 , 69.0 / 255.0, 19.0 / 255.0).data()); //saddle brown!
 	glUniform3fv(prog->getUniform("kdBack"), 1, Vector3f(139.0 / 255.0 , 69.0 / 255.0, 19.0 / 255.0).data()); //saddle brown!
 
-	MV->rotate(sin(t) / 25, 0, 0, 1); //boat rotation
-	MV->translate(sails[1]->center(1) - 0.2); //follow the water
+	//MV->rotate(sin(t) / 25, 0, 0, 1); //boat rotation
+	//MV->translate(0, spheres[0]->x(1) - sails[1]->center(1), 0); //follow the water
 
 	for(int i = 0; i < (int)spheres.size(); ++i) {
 		spheres[i]->draw(MV, prog);
@@ -231,7 +233,7 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 	}
 
 	//draw compass last
-	MV->popMatrix();
-	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
-	compass->draw(prog);
+	//MV->popMatrix();
+	//glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
+	//compass->draw(prog);
 }

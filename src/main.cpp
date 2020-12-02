@@ -186,24 +186,24 @@ void render()
 	camera->applyProjectionMatrix(P);
 	MV->pushMatrix();
 
-	prog->bind(); //draw in screen space
+	/*prog->bind(); //draw in screen space
 	MV->pushMatrix();
 	MV->translate(0, 0, 0.5);
 	glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
 	glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
 	MV->popMatrix();
 	compass->draw(prog);
-	prog->unbind();
+	prog->unbind();*/
 
 	camera->applyViewMatrix(MV);
 
 	// Draw scene
 	prog->bind();
 	glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
-	//MV->pushMatrix();
-	compass->draw(prog);
+	MV->pushMatrix();
+	//compass->draw(prog);
 	scene->draw(MV, prog);
-	//MV->popMatrix();
+	MV->popMatrix();
 	prog->unbind();
 	
 	//////////////////////////////////////////////////////
@@ -211,7 +211,7 @@ void render()
 	//////////////////////////////////////////////////////
 	
 	// Pop stacks
-	//MV->popMatrix();
+	MV->popMatrix();
 	P->popMatrix();
 	
 	GLSL::checkError(GET_FILE_LINE);

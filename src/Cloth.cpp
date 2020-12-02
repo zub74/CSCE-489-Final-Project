@@ -61,11 +61,11 @@ Cloth::Cloth(int rows, int cols,
 			p->v << 0.0, 0.0, 0.0;
 			p->m = mass/(nVerts);
 			// Pin four particles (the corners)
-			if((i == 0 || i == rows-1) && (j == 0 || j == cols-1)) {
+			if((i == 0 || i == rows-1) && (j == 0 || j == cols-1) ) {
 				p->fixed = true;
 				p->i = -1;
 			}
-			else if (isWater && !(rand() % 100 + 1)) { //randomly make points fixed for water (1% chance)
+			else if (isWater && !(rand() % 75)) { //randomly make points fixed for water (0% chance)
 				p->fixed = true;
 				p->i = -1;
 			}
@@ -75,13 +75,12 @@ Cloth::Cloth(int rows, int cols,
 				n += 3;
 			}
 			if (i == rows / 2 && j == cols / 2) {
-				center = x;
 				p->center = true;
-				cout << particles.size() << endl;
+				center = p->x;
 			}
 		}
 	}
-	
+
 	// Create x springs
 	for(int i = 0; i < rows; ++i) {
 		for(int j = 0; j < cols-1; ++j) {
@@ -292,7 +291,7 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 
 			v.segment<3>(particles[i]->i) = particles[i]->v;
 			if (isWater) {
-				f.segment<3>(particles[i]->i) = particles[i]->m * ((rand() % 3 - 1) * grav + windForce); //negate gravity for ~waves~
+				f.segment<3>(particles[i]->i) = particles[i]->m * ((rand() % 4 - 1) * grav + windForce); //negate gravity for ~waves~
 			}
 			else {
 				f.segment<3>(particles[i]->i) = particles[i]->m * (grav + windForce);
@@ -360,9 +359,10 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 
 			auto particle = particles[i];
 
-			for (int j = 0; j < spheres.size(); j++) { //each sphere
+			for (int j = 1; j < spheres.size(); j++) { //each sphere (1st sphere is the ship)
 				auto sphere = spheres[j];
 				Vector3d deltaX = particle->x - sphere->x;
+				deltaX(1) = 0; //circular collision only, so height = infinite
 				double length = deltaX.norm();
 				double d = particle->r + sphere->r - length;
 
@@ -399,7 +399,7 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 		}
 		if (particles[i]->center) {
 			if(isWater)
-				cout << endl << i << endl;
+				cout << endl << particles[i]->x << endl;
 			center = particles[i]->x;
 		}
 	}
