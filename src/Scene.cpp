@@ -47,12 +47,12 @@ void Scene::load(const string &RESOURCE_DIR)
 	initialWindForce << 0.0, 0.0, -10; //set up the wind force 
 	windForce = initialWindForce;
 	
-	int rows = 15;
-	int cols = 15;
+	int rows = 17;
+	int cols = 17;
 	double mass = 0.1;
 	double stiffness = 1e1;
-	Vector3d x00(-0.75, 2.13 - 0.2, 0.385);
-	Vector3d x01(0.75, 2.13 - 0.2, 0.385);
+	Vector3d x00(-0.75, 2.13 - 0.2, 0.395);
+	Vector3d x01(0.75, 2.13 - 0.2, 0.395);
 	Vector3d x10(-1, 1.0, 0.34);
 	Vector3d x11(1, 1.0, 0.34);
 	Vector3d s00(-0.025, 2.67, 2.46);
@@ -235,10 +235,9 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 
 	
 	MV->pushMatrix();
-	MV->translate(sails[0]->center(1)); //follow the water (idfk why the water y value starts at 1.465)
-	MV->rotate(sin(t) / 25, 0, 0, 1); //boat rotation
-	MV->rotate(PI / 8, 1, 0, 0); //boat rotation
-	cout << sails[0]->center(1)<< endl;
+	MV->translate(0, -(MV->topMatrix()[3][1] - sails[0]->center(1)), 0); //follow the water (idfk why the water y value starts at 1.465)
+	MV->rotate(sin(t*3) / 5, 0, 0, 1); //boat rotation
+	MV->rotate(PI / 32, 1, 0, 0); //boat rotation
 
 	MV->pushMatrix();//draw boat scaled down
 	MV->scale(0.5);
@@ -246,22 +245,15 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 	ship->draw(prog);
 	MV->popMatrix();
 
-	for(int i = 0; i < (int)spheres.size(); ++i) {
-		spheres[i]->draw(MV, prog);
+	for(int i = 0; i < (int)spheres.size(); ++i) { //draw spheres (for debugging)
+		//spheres[i]->draw(MV, prog);
 		//glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(spheres[i]->x(0) * 2 + i * 0.1, spheres[i]->x(1) * 2, abs(spheres[i]->x(2) * 2)).data());
 	}
-	for (int i = 1; i < sails.size(); i++) {
+
+	for (int i = 1; i < sails.size(); i++) { //draw sails
 		sails[i]->draw(MV, prog);
 	}
 	MV->popMatrix();
 
 	sails[0]->draw(MV, prog); //draw water
-
-	//draw compass last
-	//MV->popMatrix(); //back to screen view
-	//MV->pushMatrix();
-	//MV->translate(0.5, 0.5, -0.5);
-	//glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, glm::value_ptr(MV->topMatrix()));
-	//compass->draw(prog);
-	//MV->popMatrix();
 }

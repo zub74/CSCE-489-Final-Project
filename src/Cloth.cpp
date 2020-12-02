@@ -286,9 +286,6 @@ void Cloth::step(double h, const Vector3d &grav, const Vector3d& windForce, cons
 				A_.push_back(T(index, index, particles[i]->m));
 			}
 
-			//Matrix3d I = Matrix3d::Identity(3, 3);
-			//M.block<3, 3>(particles[i]->i, particles[i]->i) = particles[i]->m * I;
-
 			v.segment<3>(particles[i]->i) = particles[i]->v;
 			if (isWater) {
 				f.segment<3>(particles[i]->i) = particles[i]->m * ((rand() % 4 - 1) * grav + windForce); //negate gravity for ~waves~
